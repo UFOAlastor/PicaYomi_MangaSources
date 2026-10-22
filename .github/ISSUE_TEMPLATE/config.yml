@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 插件问题
+    url: https://github.com/UFOAlastor/koreader_PicaYomi/issues
+    about: 阅读器、下载和通用界面问题请到插件仓库反馈。

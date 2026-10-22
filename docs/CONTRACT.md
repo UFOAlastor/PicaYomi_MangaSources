@@ -1,6 +1,6 @@
 # SDK 与源契约（API v3）
 
-适用宿主：PicaYomi **0.10.6 起**。新源使用 `templates/api-v3`。已发布 API v1/v2 包继续兼容，[冻结的 v2 契约](CONTRACT_V2.md)和旧模板保留。源仍是用户信任的 Lua 代码，SDK 不是安全沙箱。
+适用宿主：PicaYomi **0.10.6 起**。新源使用 `templates/api-v3`。公开制作资料仅维护当前 API v3。源仍是用户信任的 Lua 代码，SDK 不是安全沙箱。
 
 ## 包与生命周期
 

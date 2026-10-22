@@ -1,64 +1,52 @@
 # 源版本、订阅与维护
 
-作者生成 `.pysource` 并发布签名订阅，用户通过设置 → 源管理 → 订阅管理安装或更新，完成后重启。PicaYomi 0.11.3 起预置官方聚合订阅和三个基础源，手动更新可以安装拷贝漫画。
+当前公开制作资料使用 API v3，默认订阅使用签名聚合目录 format 3。源包与插件分别维护版本。用户通过插件的订阅管理安装和更新，重启后激活。
 
-## 版本与本地产物
+## 分发方式
 
-源版本独立于宿主。改域名候选、字段解析、请求或图片处理都升级源版本；同版本内容不可修改。新增宿主依赖才抬高 min_app_version。稳定 id/publisher_id 与章节身份不能随普通更新改变。
+源仓库不需要 GitHub Release。插件直接读取 `packages/index.json`，按其中的 URL 下载不可变 `.pysource` 包。默认目录地址为：
+
+```text
+https://raw.githubusercontent.com/UFOAlastor/PicaYomi_MangaSources/main/packages/index.json
+```
+
+已有同发布身份的源在默认引导时绑定订阅。默认公钥由宿主预置；用户主动输入其他订阅地址即授权首次信任。后续固定发布身份与密钥，身份变化不能静默接受。
+
+## 版本与产物
+
+改域名、请求、解析或图片处理须升级源版本；同 ID/version 的文件不可改写。新增宿主依赖时调整 `min_app_version`。稳定的源 ID、发布者身份及章节 ID 不随普通更新改变。
 
 ```sh
 python3 tools/build_source.py "$PYSOURCE_ROOT/mysource" --out dist/sources
 ```
 
-本地无订阅目录的构建成功后，按源 ID 只留最新 `.pysource`；失败保留原包，不能在含新版的同一输出目录回建旧版。不同源互不删除。需要比较旧版时使用单独临时目录。
+本地无订阅目录的构建按源 ID 只留最新版；失败保留旧包。正式目录仍引用的所有兼容版本都要保留，不能按临时构建清理。源内容与许可说明随源码维护，账号、密钥、个人阅读文件和日志不进入发行包。
 
-正式发布使用独立 `releases/<publisher>/`，不要把它当可随意清理的本地 dist。签名目录可同时保留多个兼容发行版，其仍引用的文件属于当前发行集合；构建器不会删除这些文件，否则旧客户端会遇到失效链接。移除旧发行版本须先形成新的合法目录并确认兼容策略。
+## 签名聚合目录
 
-## 当前分发方式
-
-本仓库的 `packages/` 提供手动安装包及 SHA256SUMS，没有预置的签名订阅地址。GitHub 仓库链接和 SHA256SUMS 不能直接作为订阅目录添加。
-
-历史三源的已有安装需要绑定签名订阅才能更新；首次导入与更新采用不同的身份规则。建立订阅时按发布者提供完整目录、不可变包及签名，并在客户端验证绑定与更新。
-
-## 签名目录
-
-签名工具另需 Python cryptography。发布密钥是外部 Ed25519 PEM，不放进源码、fixture、安装包或公开仓库。实际密钥生成与使用按维护者明确的发布指令操作，教程不提供任何有效密钥。
+需要 Python cryptography。私钥为外部 Ed25519 PEM，保存在仓库忽略目录或仓库外，不提交、不上传。密钥生成和轮换按维护者明确指令执行。
 
 ```sh
-python3 tools/build_source.py "$PYSOURCE_ROOT/mysource" \
-  --out releases/community.mysource \
-  --base-url https://sources.example/mysource \
-  --sign-key /path/outside/repository/publisher.pem --revision 1
+python3 tools/build_catalog.py dist/sources \
+  --key /secure/sources-ed25519.pem --revision 2 \
+  --base-url https://raw.githubusercontent.com/UFOAlastor/PicaYomi_MangaSources/main/packages \
+  --out dist/sources/index.json
 ```
 
-示例域名必须替换为自己的真实 HTTPS 地址。命令只生成包和 index.json，不上传。先上传不可变包，再上传目录。每次目录构建 revision 必须增加；一次目录内所有源使用同一 publisher_id，目录含多个源时每次构建也递增 revision。
+示例 revision 必须替换为高于已发布目录的数值。命令只生成目录，不上传。
 
-当前三个历史源的 publisher_id 为 picayomi.legacy，拷贝为 picayomi.copymanga；不能直接混进同一个签名目录。社区新源使用自己的稳定发布身份，不要冒用这些身份。
+外层为 `{signed:1,public_key,signature,payload}`；payload 是原始 JSON 字符串，不得改写后复用签名。payload 的 `format=3`，包含目录 name/publisher_id/revision/sources；各条目保留自身 publisher_id，并包含 id、版本、API 与插件兼容范围、URL、sha256、size 和 package signature。默认目录发布者为 `picayomi.sources`。
 
-原始目录为 format=2，包含 name/publisher_id/revision/sources；每项包含 id、版本、兼容范围、URL、sha256、size 与 package signature。外层 `{signed:1,public_key,signature,payload}` 中 payload 是原始 JSON 字符串，不得重新排版后复用签名。公钥为 32 字节、签名为 64 字节的小写十六进制。
+公钥为 32 字节、签名为 64 字节的小写十六进制。签名消息为 `PicaYomi/<purpose>/v1` + NUL + 原始字节；purpose 为 index/package/rotation。同一密钥验证目录与各包。宿主拒绝修订号回退、同修订号内容变化及同源同版本内容变化。
 
-签名消息为 `PicaYomi/<purpose>/v1` + NUL + 原始字节；purpose 为 index/package/rotation。正常密钥轮换用 `--rotation-key` 提供旧钥签署新钥，同时为保留包生成新钥签名；旧钥丢失须客户端显式重新确认身份。
+## 发布顺序
 
-旧未签名 format=1 目录只能手动更新。统一的“自动检查更新”开关默认关闭，开启后自动更新要求已确认的签名订阅，只更新已安装源，固定版本、兼容范围、撤回与隔离规则仍生效；不能保证开启自动检查更新后所有客户端立即采用新版。
+1. 完成源包、manifest、离线样例及真实接口检查；缺账号或设备时明确记录未验证项目。
+2. 检查许可、公开文件和脱敏情况；生成新版包并核对摘要与大小。
+3. 使用维护者的签名密钥生成更高 revision 的目录，验证所有引用文件、签名与兼容范围。
+4. **先上传新版本源包，再更新目录**；可在同一 Git 提交中原子发布。保留目录引用的旧兼容版本。
+5. 验证匿名 HTTPS 下载、客户端更新及重启激活，记录远端提交与摘要。
 
-## 发布前检查
+源站错误、断网和账号失效不触发代码回滚；初始化失败由宿主内部恢复上一可用版本。用户界面不提供版本固定或手动回滚入口。
 
-1. 版本、发布者、能力和兼容范围与代码及测试一致。
-2. 离线与真实接口结果分开列，缺账号/设备明确标注。
-3. 核对代码来源和许可证，fixture 去除个人信息、凭据与非必要阅读内容。
-4. 在独立目录验证包摘要、目录签名、所有引用文件、客户端首次添加和更新。
-5. 人工审查将公开的文件与变更；获得明确发布指令后上传，并记录真实可访问地址。
-
-后续维护依据响应/结构变动与用户问题，保留最小回归样例。域名失效、章节截断、图片缺页分别诊断，不能一律让用户更新整个插件或清空阅读数据。
-
-## 官方聚合目录（宿主 0.11.3 起）
-
-`packages/index.json` 使用签名信封，payload 的 `format=3`。目录发布者为 `picayomi.sources`；每个条目保留源包自身的 `publisher_id`，同一签名密钥验证目录与各包。旧 format 1/2 契约保留，format 3 需新宿主。
-
-维护者从当前不可变源包构建聚合目录（私钥保存在仓库外，不提交）：
-
-```sh
-python3 tools/build_catalog.py dist/sources --key /secure/sources-ed25519.pem --revision 2 --base-url https://raw.githubusercontent.com/UFOAlastor/PicaYomi_MangaSources/main/packages --out dist/sources/index.json
-```
-
-revision 必须递增，同 ID/version 的摘要不可变。发布前验证所有条目的包、大小、摘要与签名。只提交源代码、发行包、签名目录与公开文档；不提交私钥、账号、日志和设备数据。
+自动检查默认关闭。开启后，在首页空闲且已联网时更新已安装的可信签名源，每个 KOReader 进程最多完成一轮，遵守 24 小时间隔与失败退避。成功后提供“立即重启 KOReader／稍后”；自动流程不添加新源或恢复已卸载源。源码改变只有正常重启后才激活。
