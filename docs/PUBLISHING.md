@@ -1,6 +1,6 @@
 # 源版本、订阅与维护
 
-普通作者先生成 `.pysource`，用户通过设置 → 源管理 → 导入源包，长按选文件，确认信任后重启。无需把源文件手动放入插件内部路径。
+作者生成 `.pysource` 并发布签名订阅，用户通过设置 → 源管理 → 订阅管理安装或更新，完成后重启。PicaYomi 0.11.3 起预置官方聚合订阅和三个基础源，手动更新可以安装拷贝漫画。
 
 ## 版本与本地产物
 
@@ -50,3 +50,15 @@ python3 tools/build_source.py "$PYSOURCE_ROOT/mysource" \
 5. 人工审查将公开的文件与变更；获得明确发布指令后上传，并记录真实可访问地址。
 
 后续维护依据响应/结构变动与用户问题，保留最小回归样例。域名失效、章节截断、图片缺页分别诊断，不能一律让用户更新整个插件或清空阅读数据。
+
+## 官方聚合目录（宿主 0.11.3 起）
+
+`packages/index.json` 使用签名信封，payload 的 `format=3`。目录发布者为 `picayomi.sources`；每个条目保留源包自身的 `publisher_id`，同一签名密钥验证目录与各包。旧 format 1/2 契约保留，format 3 需新宿主。
+
+维护者从当前不可变源包构建聚合目录（私钥保存在仓库外，不提交）：
+
+```sh
+python3 tools/build_catalog.py dist/sources --key /secure/sources-ed25519.pem --revision 2 --base-url https://raw.githubusercontent.com/UFOAlastor/PicaYomi_MangaSources/main/packages --out dist/sources/index.json
+```
+
+revision 必须递增，同 ID/version 的摘要不可变。发布前验证所有条目的包、大小、摘要与签名。只提交源代码、发行包、签名目录与公开文档；不提交私钥、账号、日志和设备数据。
