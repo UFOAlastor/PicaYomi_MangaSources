@@ -1,6 +1,6 @@
 # 制作一个源：给 AI 的工作单
 
-这是执行顺序与交付清单，不是排期。版本基准为宿主 API v3（PicaYomi 0.10.6 起）。先读 [AGENTS](../AGENTS.md) 和 [契约](CONTRACT.md)。
+本指南介绍 API v3 源的制作和交付流程。API v3 基础接口适用于 PicaYomi 0.10.6 起；当前模板使用的列表展示配置要求 0.10.8 起，其他能力以契约与 manifest 为准。先读 [AGENTS](../AGENTS.md) 和 [契约](CONTRACT.md)。
 
 ## 先形成证据表
 

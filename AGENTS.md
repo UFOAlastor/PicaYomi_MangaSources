@@ -1,6 +1,6 @@
 # AI 制作漫画源的任务说明
 
-先读本目录 README、`docs/AUTHORING.md` 和 `docs/CONTRACT.md`。当前私有工作区的源在 `extensions/<id>/`；独立源仓库在 `sources/<id>/`。以工作区 README 确认路径，不猜远端地址。
+先读本目录 README、`docs/AUTHORING.md` 和 `docs/CONTRACT.md`。源目录由 README 的 `PYSOURCE_ROOT` 指定，本仓库默认为 `sources/<id>/`。模板与样例相对于本文件所在的资料目录查找，不猜测路径或远端地址。
 
 ## 任务输入
 
@@ -8,7 +8,7 @@
 
 ## 实现约束
 
-- 新源使用 API v3（宿主 0.10.6 起）。模板为 `templates/api-v3`，在当前私有仓库中相对本文件所在目录查找。
+- 新源使用 API v3（宿主 0.10.6 起）。模板为 `templates/api-v3`，相对本文件所在目录查找。
 - 仅在源目录、对应最小测试/样例及源文档中实现。需要新宿主能力时明确提出宿主变更，不能偷偷改插件或模拟不存在的 SDK。
 - 源工厂返回对象，`init` 只绑定依赖和恢复本地状态，不联网。HTTP 用 `ctx.http`；包内导入用 `ctx.require`，图片处理用 `ctx.images.register` 注册本包逻辑名；不使用 ctx.host、ctx.base 或 ctx.module。
 - 能力声明必须有实现与证据。推荐与最新分开；无评论就关闭评论；回复区分 embedded/paged；登录支持与强制登录分开。

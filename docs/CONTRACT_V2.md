@@ -1,6 +1,6 @@
 # SDK 与源契约速查（API v2）
 
-本页可随源仓库独立发布，不依赖私有计划。适用基准：PicaYomi 0.10.0 起；新增宿主接口时必须重新核对兼容版本。
+本页适用于维护 API v2 源包；新源使用 [API v3](CONTRACT.md)。适用基准：PicaYomi 0.10.0 起；新增宿主接口时必须重新核对兼容版本。
 
 ## 包与元数据
 
@@ -12,7 +12,7 @@
 | name / author | 非空；名称最多 160 字节，作者最多 200 字节 |
 | publisher_id | API v2 必填，稳定发布者身份；字母/数字/下划线/点/连字符，最多 100 字节 |
 | version | 三段数字，如 1.0.0；同版本内容不可变，不使用预发布后缀 |
-| api_version / min_app_version | 新源 api_version=2，最低宿主按实际依赖填写；可选 max_app_version |
+| api_version / min_app_version | v2 包使用 api_version=2，最低宿主按实际依赖填写；可选 max_app_version |
 | entry | 包内 Lua 路径，如 main.lua |
 | identity_policy | 新源为 stable；legacy 仅供宿主可信迁移的三个历史 ID |
 | settings | 最多 16 项 `{key,title,default}`；default 为字符串，不放凭据 |
