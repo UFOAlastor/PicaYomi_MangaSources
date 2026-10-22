@@ -44,7 +44,7 @@ KO_HOME="$PYSOURCE_DATA" SDL_VIDEODRIVER=dummy ./luajit "$PYSOURCE_CHECK" \
 
 检查器只提供 fixture GET；POST/登录、多步骤 token、请求头策略、Cookie、图片后处理和复杂分页需要源专属测试。不要为了通过通用检查器简化平台真实协议。fixture 模式替换 ctx.http，不是恶意代码网络沙箱；源不应绕开 SDK 自己联网。
 
-API v3 的 case 方法通过 SourceRuntime.invoke 调用，使用规范字段；v1/v2 case 仍调用旧字段门面。源还需在真实宿主中验证生产阅读、下载及独立进程的离线重开；本检查器的映射断言不代替这些集成场景。
+API v3 的 case 方法通过 SourceRuntime.invoke 调用，使用规范字段。源还需在真实宿主中验证生产阅读、下载及独立进程的离线重开；本检查器的映射断言不代替这些集成场景。
 
 ## 验收清单
 

@@ -50,7 +50,7 @@ context/next 最多 16 KiB，为有界 JSON 对象。禁止凭据、请求头、
 
 首轮 request 不带续页字段；后续合并上一轮 next 的不透明内容，可带 sort/categories。例如 next={cursor="abc"}，下次接收 {cursor="abc",sort=...}。不要假定只有页码。未知总量不填 total，不伪造 pages，界面按 has_more 翻页。目录最多 200 次请求 / 20000 章，拒绝重复 continuation/ID，取消或失败不发布部分结果。
 
-能力键沿用 v2：login、requires_login、recommendations、latest、search、categories、rankings、favorites、comments、download、local_favorites；random 是兼容保留接口，没有首页入口。未声明关闭，未知键或缺实现激活失败。requires_login 要求 login；部分功能登录用 `access={favorites="login"}`。replies 为 none/embedded/paged，后两者要求 comments。评论仅只读，所有源不实现发表。
+能力键：login、requires_login、recommendations、latest、search、categories、rankings、favorites、comments、download、local_favorites；random 是兼容保留接口，没有首页入口。未声明关闭，未知键或缺实现激活失败。requires_login 要求 login；部分功能登录用 `access={favorites="login"}`。replies 为 none/embedded/paged，后两者要求 comments。评论仅只读，所有源不实现发表。
 
 ## 列表展示配置（宿主 0.10.8 起，可选）
 
