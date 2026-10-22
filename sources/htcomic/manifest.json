@@ -1,0 +1,20 @@
+{
+  "id": "htcomic",
+  "name": "绅士漫画",
+  "author": "PicaYomi source maintainers",
+  "publisher_id": "picayomi.legacy",
+  "version": "1.1.1",
+  "api_version": 3,
+  "min_app_version": "0.11.2",
+  "entry": "main.lua",
+  "identity_policy": "legacy",
+  "data_schema_version": 1,
+  "cache_schema_version": 1,
+  "settings": [
+    {
+      "key": "base_url",
+      "title": "网站地址",
+      "default": "https://www.wnacg.com"
+    }
+  ]
+}

@@ -1,0 +1,209 @@
+{
+  "settings": {
+    "base_url": "https://api.example.invalid"
+  },
+  "responses": {
+    "https://api.example.invalid/comics": {
+      "status_code": 200,
+      "body": "{\"items\":[{\"id\":\"book\",\"title\":\"Fixture\"}],\"has_more\":true,\"next\":{\"cursor\":\"second\"}}"
+    },
+    "https://api.example.invalid/comics?cursor=second": {
+      "status_code": 200,
+      "body": "{\"items\":[{\"id\":\"last\",\"title\":\"Last\"}],\"has_more\":false,\"total\":2}"
+    },
+    "https://api.example.invalid/search?q=hello": {
+      "status_code": 200,
+      "body": "{\"items\":[{\"id\":\"book\",\"title\":\"Fixture\"}],\"has_more\":false}"
+    },
+    "https://api.example.invalid/search?q=empty": {
+      "status_code": 200,
+      "body": "{\"items\":[],\"has_more\":false,\"total\":0}"
+    },
+    "https://api.example.invalid/search?q=down": {
+      "status_code": 503,
+      "body": "{}"
+    },
+    "https://api.example.invalid/comic/book": {
+      "status_code": 200,
+      "body": "{\"id\":\"book\",\"title\":\"Fixture\",\"description\":\"Description\"}"
+    },
+    "https://api.example.invalid/comic/book/chapters": {
+      "status_code": 200,
+      "body": "{\"items\":[{\"id\":\"first\",\"title\":\"First\"}],\"has_more\":false,\"total\":1}"
+    },
+    "https://api.example.invalid/comic/book/chapter/first": {
+      "status_code": 200,
+      "body": "{\"images\":[{\"url\":\"https://images.example.invalid/first.jpg\"}]}"
+    },
+    "https://api.example.invalid/comic/book/chapter/broken": {
+      "status_code": 200,
+      "body": "{\"images\":[{\"url\":\"\"}]}"
+    }
+  },
+  "cases": [
+    {
+      "method": "getLatest",
+      "args": [
+        {}
+      ],
+      "expect": {
+        "ok": true,
+        "counts": {
+          "items": 1
+        },
+        "data": {
+          "has_more": true,
+          "next": {
+            "cursor": "second"
+          },
+          "items": [
+            {
+              "id": "book",
+              "title": "Fixture"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "getLatest",
+      "args": [
+        {
+          "cursor": "second"
+        }
+      ],
+      "expect": {
+        "ok": true,
+        "counts": {
+          "items": 1
+        },
+        "data": {
+          "has_more": false,
+          "total": 2
+        }
+      }
+    },
+    {
+      "method": "search",
+      "args": [
+        "hello",
+        {}
+      ],
+      "expect": {
+        "ok": true,
+        "counts": {
+          "items": 1
+        }
+      }
+    },
+    {
+      "method": "search",
+      "args": [
+        "empty",
+        {}
+      ],
+      "expect": {
+        "ok": true,
+        "counts": {
+          "items": 0
+        },
+        "data": {
+          "has_more": false,
+          "total": 0
+        }
+      }
+    },
+    {
+      "method": "search",
+      "args": [
+        "down",
+        {}
+      ],
+      "expect": {
+        "ok": false,
+        "code": "network"
+      }
+    },
+    {
+      "method": "getManga",
+      "args": [
+        "book"
+      ],
+      "expect": {
+        "ok": true,
+        "data": {
+          "id": "book",
+          "title": "Fixture",
+          "description": "Description"
+        }
+      }
+    },
+    {
+      "method": "getChapters",
+      "args": [
+        "book",
+        {}
+      ],
+      "expect": {
+        "ok": true,
+        "counts": {
+          "items": 1
+        },
+        "data": {
+          "items": [
+            {
+              "id": "first",
+              "manga_id": "book",
+              "position": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "getPages",
+      "args": [
+        "book",
+        "first"
+      ],
+      "expect": {
+        "ok": true,
+        "counts": {
+          "items": 1
+        },
+        "data": {
+          "complete": true,
+          "items": [
+            {
+              "index": 1,
+              "resource": {
+                "url": "https://images.example.invalid/first.jpg"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "getPages",
+      "args": [
+        "book",
+        "broken"
+      ],
+      "expect": {
+        "ok": false,
+        "code": "invalid_response"
+      }
+    },
+    {
+      "method": "getFavorites",
+      "args": [
+        {}
+      ],
+      "expect": {
+        "ok": false,
+        "code": "unsupported"
+      }
+    }
+  ]
+}
