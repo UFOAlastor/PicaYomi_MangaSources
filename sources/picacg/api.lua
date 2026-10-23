@@ -33,7 +33,7 @@ local CACHE_TTL = {
 -- @param path: API 路径 (如 "comics/xxx" 或 "auth/sign-in")
 -- @param body: 请求体 (POST 时传入)
 -- @return: response_data 表 (有 code/message/data) 或 nil, err
-function PicacgAPI:request(http_client, headers, auth, method, path, body)
+function PicacgAPI:request(http_client, headers, auth, method, path, body, no_retry)
     local token = auth:getToken()
     -- 允许部分接口无 token (如登录)
     local req_headers = headers:build(path, method, token)
@@ -42,7 +42,8 @@ function PicacgAPI:request(http_client, headers, auth, method, path, body)
     end
 
     local url = headers:buildUrl(path)
-    local response, err = http_client:requestWithRetry(method, url, req_headers, body, 15)
+    local send = no_retry and http_client.request or http_client.requestWithRetry
+    local response, err = send(http_client, method, url, req_headers, body, 15)
 
     if not response then
         return nil, "网络请求失败: " .. tostring(err)
@@ -55,6 +56,8 @@ function PicacgAPI:request(http_client, headers, auth, method, path, body)
         logger.err("Picayomi SourceAAPI: JSON 解析失败, path=" .. path ..
             ", status=" .. tostring(response.status_code) ..
             ", body_len=" .. #(response.body or ""))
+        local status = tonumber(response.status_code)
+        if status and status >= 400 then return nil, "服务器返回错误 (HTTP " .. status .. ")" end
         return nil, "响应解析失败"
     end
 
@@ -626,31 +629,45 @@ function PicacgAPI:getFavorites(http_client, headers, auth, page, sort)
     return true, result
 end
 
---- 添加收藏
-function PicacgAPI:addFavorite(http_client, headers, auth, comic_id)
+-- 平台只有 POST 切换接口。每次先读取未缓存的真实状态，再至多切换一次；
+-- 写请求禁止自动重发，超时也只读回确认，避免响应丢失后重试又切回去。
+function PicacgAPI:setFavorite(http_client, headers, auth, comic_id, wanted)
+    local detail_path = "comics/" .. comic_id
+    local function readState()
+        local data, err = self:request(http_client, headers, auth, "GET", detail_path)
+        if not data then return nil, err end
+        if not isOk(data) then return nil, data.message or "无法读取收藏状态" end
+        local comic = type(data.data) == "table" and data.data.comic
+        if type(comic) ~= "table" or type(comic.isFavourite) ~= "boolean" then
+            return nil, "无法确认收藏状态，请刷新详情后重试"
+        end
+        return comic.isFavourite
+    end
+    local current, err = readState()
+    if current == nil then return false, err end
+    if current == wanted then
+        cache:clear("picacg_detail_" .. comic_id)
+        cache:clearPattern("picacg_favs_")
+        return true
+    end
     local path = "comics/" .. comic_id .. "/favourite"
-    local data = self:request(http_client, headers, auth, "POST", path, "{}")
-    if not data then return false, "网络请求失败" end
-    if not isOk(data) then return false, data.message or "收藏失败" end
-
-    -- 详情缓存里存着 isFavourite, 不一起作废的话: 加完收藏 -> 退回列表 -> 再进详情,
-    -- 详情页"问源"拿到的还是那条**旧缓存**(收藏前建的), 按钮又变回「收藏」。
+    local data, write_err = self:request(http_client, headers, auth, "POST", path, "{}", true)
+    -- 无论响应是否收到，服务端都可能已完成切换，不再信任旧缓存。
     cache:clear("picacg_detail_" .. comic_id)
     cache:clearPattern("picacg_favs_")
-    return true
+    local now = readState()
+    if now == wanted then return true end
+    if now == nil then return false, "无法确认收藏结果，请刷新详情后重试" end
+    if not data then return false, write_err end
+    return false, not isOk(data) and data.message or "收藏状态未更新，请刷新详情后重试"
 end
 
---- 取消收藏
-function PicacgAPI:removeFavorite(http_client, headers, auth, comic_id)
-    local path = "comics/" .. comic_id .. "/favourite"
-    local data = self:request(http_client, headers, auth, "DELETE", path, "{}")
-    if not data then return false, "网络请求失败" end
-    if not isOk(data) then return false, data.message or "取消收藏失败" end
+function PicacgAPI:addFavorite(http_client, headers, auth, comic_id)
+    return self:setFavorite(http_client, headers, auth, comic_id, true)
+end
 
-    -- 同 addFavorite: 详情缓存里的 isFavourite 必须一起作废
-    cache:clear("picacg_detail_" .. comic_id)
-    cache:clearPattern("picacg_favs_")
-    return true
+function PicacgAPI:removeFavorite(http_client, headers, auth, comic_id)
+    return self:setFavorite(http_client, headers, auth, comic_id, false)
 end
 
 --- 获取排行榜

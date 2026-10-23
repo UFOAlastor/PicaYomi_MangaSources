@@ -172,7 +172,7 @@ function PicacgSource:getFavorites(page, sort)
     return ok, data, err
 end
 
---- 加入收藏 / 取消收藏: 源 A 的端点本身就是明确的增/删, 直接转发
+--- 加入收藏 / 取消收藏: API 层把平台的 POST 切换封装为设定语义。
 function PicacgSource:addFavorite(comic_id)
     self:_ensureInit()
     return self._api:addFavorite(self._http_client, self._headers, self._auth, comic_id)
