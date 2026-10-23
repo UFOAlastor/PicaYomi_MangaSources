@@ -106,15 +106,7 @@ end
 
 --- 从封面地址取缩略图 (列表页给的是协议相对地址)
 local function normalize_thumb(src)
-    if not src or src == "" then return nil end
-    src = src:gsub("^%s+", ""):gsub("%s+$", "")
-    if src:match("^//") then
-        return "https:" .. src
-    end
-    if src:match("^/") then
-        return Headers:getBaseUrl() .. src
-    end
-    return src
+    return Headers:normalizeImageUrl(src)
 end
 
 -- ============================================================================

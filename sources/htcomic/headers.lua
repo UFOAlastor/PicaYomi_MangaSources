@@ -23,6 +23,17 @@ function Headers:getBaseUrl()
     return base
 end
 
+-- The site's image markup can start with four slashes. Canonicalize only
+-- the scheme/authority boundary; preserve image paths and signed queries.
+function Headers:normalizeImageUrl(src)
+    if type(src) ~= "string" then return nil end
+    src = src:gsub("^%s+", ""):gsub("%s+$", "")
+    if src == "" then return nil end
+    if src:match("^//") then return "https://" .. src:gsub("^/+", "") end
+    if src:match("^/") then return self:getBaseUrl() .. src end
+    return (src:gsub("^(https?:)/+", "%1//"))
+end
+
 --- 读取已保存的 Cookie (加密存储; 形如 "key=value; key2=value2")
 function Headers:getCookieString()
     local c = SecretStore.get(self.COOKIE_KEY)
