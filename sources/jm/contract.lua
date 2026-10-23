@@ -115,14 +115,17 @@ function V.wrap(ctx,implementation,options)
     function S:getLatest(request) return list("getComics",request) end
     function S:getRecommendations(request) return list("getRecommendations",request) end
     function S:search(keyword,request) return list("search",request,keyword) end
-    function S:getCategoryComics(id,request) return list("getCategoryComics",request,id) end
+    function S:getCategoryComics(id,request) return list("getCategoryComics",request,id=="jm-all" and "" or id) end
     function S:getRankings(id,request) return list("getRankings",request,id) end
     function S:getFavorites(request) return list("getFavorites",request) end
     function S:getRandom(request) return list("getRandom",request) end
     function S:getCategories()
         local ok,data,err=fetch("getCategories")
         if not ok then return false,nil,err end
-        local items={}; for i,item in ipairs(data) do items[i]={id=tostring(item._id or item.title),title=item.title,isWeb=item.isWeb,link=item.link} end
+        local items={}; for i,item in ipairs(data) do
+            local id=tostring(item._id or item.title)
+            items[i]={id=id=="" and "jm-all" or id,title=item.title,isWeb=item.isWeb,link=item.link}
+        end
         return true,items,nil
     end
     function S:getRankingTypes()

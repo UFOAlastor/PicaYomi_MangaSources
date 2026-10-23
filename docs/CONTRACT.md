@@ -50,6 +50,8 @@ context/next 最多 16 KiB，为有界 JSON 对象。禁止凭据、请求头、
 
 首轮 request 不带续页字段；后续合并上一轮 next 的不透明内容，可带 sort/categories。例如 next={cursor="abc"}，下次接收 {cursor="abc",sort=...}。不要假定只有页码。未知总量不填 total，不伪造 pages，界面按 has_more 翻页。目录最多 200 次请求 / 20000 章，拒绝重复 continuation/ID，取消或失败不发布部分结果。
 
+宿主 **0.11.20 起**，作品列表可额外声明 `pagination={mode="page",page=1,pages=695,page_size=20}`，仅用于源站确实支持任意页码定位并提供末页的接口。三个数字须为正整数，页码与末页最多 1000000、每页容量最多 20000；page 不超过 pages，has_more 等于 page<pages，续页只能是 `{page=page+1}`。宿主按查询/排序隔离声明，验证成功后允许在范围内直接跳页，不受游标遍历的 200 页上限影响；仍只保留有界续页状态。`page_size` 是固定每页容量，末页不足整页时不缩小。只有分页器末页、没有准确条数时不填 total；不依赖额外游标的页码源才能使用此扩展，并须声明最低宿主 0.11.20。其他源继续使用不透明 next，不从普通 `{page=...}` 续页推断支持跳页。
+
 能力键：login、requires_login、recommendations、latest、search、categories、rankings、favorites、comments、download、local_favorites；random 是兼容保留接口，没有首页入口。未声明关闭，未知键或缺实现激活失败。requires_login 要求 login；部分功能登录用 `access={favorites="login"}`。replies 为 none/embedded/paged，后两者要求 comments。评论仅只读，所有源不实现发表。
 
 宿主 0.11.5 起，未登录也可进入主页、切源、设置及离线入口；`requires_login` 与 `access` 约束具体在线动作，不应将支持账号等同于整个插件必须登录。
