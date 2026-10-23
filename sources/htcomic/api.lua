@@ -304,9 +304,39 @@ function HtAPI.parseComicList(html)
     end
 
     -- 总页数: 分页器里最大的页码 (见 parse_last_page)
-    local pages = parse_last_page(doc, "div.f_left.paginator a")
+    local page = tonumber(node_text(doc:select("div.f_left.paginator span.thispage")[1]))
+    local pages = math.max(page or 1, parse_last_page(doc, "div.f_left.paginator a"))
 
-    return { comics = comics, pages = pages }
+    return { comics = comics, pages = pages, page = page }
+end
+
+-- List/category/ranking pages expose the last page, but no item count. Count
+-- only the last page, never multiply its capacity into a fabricated exact total.
+local function add_list_total(http_client, data, page, first_url, last_url)
+    local pages = tonumber(data.pages)
+    if not pages or pages < page or #data.comics > 20 then return end
+    local key = "htcomic:list_total:v1:" .. first_url
+    local minimum = (page - 1) * 20 + #data.comics
+    if page == pages and (#data.comics > 0 or page == 1) then
+        data.total = minimum
+        cache:cacheData(key, { pages = pages, total = minimum }, os.time() + 300)
+        return
+    end
+    local saved = cache:getData(key)
+    if saved and saved.pages == pages then
+        if saved.total == nil then return end -- Failed optional lookup: short cooldown.
+        if saved.total >= minimum then data.total = saved.total; return end
+    end
+    -- One bounded request; a failed count must not hide the main list. Cache
+    -- failures briefly so every subsequent screen does not repeat the lookup.
+    local html = http_get(http_client, last_url, 5)
+    local last = html and HtAPI.parseComicList(html)
+    if last and last.page == pages and last.pages == pages
+        and #last.comics > 0 and #last.comics <= 20 then
+        local total = (pages - 1) * 20 + #last.comics
+        if total >= minimum then data.total = total end
+    end
+    cache:cacheData(key, { pages = pages, total = data.total }, os.time() + (data.total and 300 or 60))
 end
 
 --- 取某一类/某一页的列表 (id 取 parseCategories 给出的 _id, 即站点路径名)
@@ -328,6 +358,8 @@ function HtAPI:getList(http_client, id, page)
         return false, nil, perr
     end
     data.page = page
+    add_list_total(http_client, data, page, Headers:buildUrl(self.listUrl(id, 1)),
+        Headers:buildUrl(self.listUrl(id, data.pages)))
     if #data.comics == 0 then
         -- **解析成功但没有条目 = 真的到底了**, 不是错误。
         --
@@ -384,6 +416,8 @@ function HtAPI:getRanking(http_client, rtype, page)
         return false, nil, perr
     end
     data.page = page
+    add_list_total(http_client, data, page, Headers:buildUrl(self:rankingUrl(rtype, 1)),
+        Headers:buildUrl(self:rankingUrl(rtype, data.pages)))
     if #data.comics == 0 then
         if logger.enabled then logger.info(string.format("Picayomi htcomic: 排行榜(%s) 第 %d 页没有条目, 视为到底",
             tostring(rtype), page)) end
