@@ -52,6 +52,8 @@ context/next 最多 16 KiB，为有界 JSON 对象。禁止凭据、请求头、
 
 能力键：login、requires_login、recommendations、latest、search、categories、rankings、favorites、comments、download、local_favorites；random 是兼容保留接口，没有首页入口。未声明关闭，未知键或缺实现激活失败。requires_login 要求 login；部分功能登录用 `access={favorites="login"}`。replies 为 none/embedded/paged，后两者要求 comments。评论仅只读，所有源不实现发表。
 
+宿主 0.11.5 起，未登录也可进入主页、切源、设置及离线入口；`requires_login` 与 `access` 约束具体在线动作，不应将支持账号等同于整个插件必须登录。
+
 ## 列表展示配置（宿主 0.10.8 起，可选）
 
 源工厂可声明 `list_display`，选择两行信息的字段、顺序和标签。没有配置时完全沿用宿主默认展示，不影响已发布 v1/v2/v3 包。使用此扩展的包必须声明 `min_app_version>=0.10.8`，当前 v3 模板已声明这个版本。
