@@ -54,7 +54,7 @@ function V.wrap(ctx,implementation,options)
         local page=tonumber(data.page) or request.page or 1
         local pages=math.max(page,tonumber(data.pages) or page)
         return true,{items=items,has_more=more,next=more and {page=page+1} or nil,
-            total=total,pagination={mode="page",page=page,pages=pages,page_size=20}},nil
+            total=total,pagination={mode="page",page=page,pages=pages,page_size=method=="search" and 24 or 20}},nil
     end
     function S:init()
         implementation:init()

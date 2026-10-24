@@ -425,7 +425,7 @@ function HtAPI:getRanking(http_client, rtype, page)
     return true, data
 end
 
---- 搜索 (站点搜索页每页 20 条)
+--- 搜索 (站点搜索页每页 24 条，分类/列表为 20 条)
 function HtAPI:search(http_client, keyword, page)
     page = tonumber(page) or 1
     local url = Headers:buildUrl("/search/?q=" .. urlencode(keyword) ..
@@ -447,18 +447,26 @@ function HtAPI:search(http_client, keyword, page)
     -- ("大約有 13,888 項符合查詢結果"), 除以每页条数就是总页数 —— 比分页器准。
     -- 取两者较大值: 分页器给的至少是"站点确实能翻到的页", 别把它缩小。
     local doc = parse_html(html)
+    local total
     if doc then
         local result = doc:select("p.result b")[1]
         -- 千位分隔符必须先去掉: "13,888" 直接 match("(%d+)") 只会拿到 "13",
         -- 除以每页 24 条算出来是 1 页 —— 搜索同样翻不动页。
-        local total = result and tonumber((node_text(result):gsub(",", "")):match("(%d+)"))
-        local per = #data.comics
-        if total and per and per > 0 then
-            data.pages = math.max(data.pages or 1, math.ceil(total / per))
+        total = result and tonumber((node_text(result):gsub(",", "")):match("(%d+)"))
+        if total then
+            -- A short last page must not become the server's page capacity.
+            data.pages = math.max(data.pages or 1, math.ceil(total / 24))
             -- 顺手把总条数带出去: 列表页脚据此显示"共 N 项"。以前只拿它算页数就丢了,
             -- 于是页脚永远只有"第 N 页 · 已加载 K 项"。
             data.total = total
+            if total == 0 then
+                data.comics = {}
+                data.pages = 1
+            end
         end
+    end
+    if total == nil and #data.comics == 0 then
+        return false, nil, "搜索结果数据格式异常，请稍后重试"
     end
     return true, data
 end
